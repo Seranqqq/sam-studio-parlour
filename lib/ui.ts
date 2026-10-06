@@ -1,0 +1,1 @@
+export const sel = "h-11 md:h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
