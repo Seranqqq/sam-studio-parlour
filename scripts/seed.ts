@@ -1,4 +1,5 @@
 import { loadEnvConfig } from "@next/env";
+import { randomUUID } from "node:crypto";
 import type { BillItem, BusinessId, ItemType, PayMethod } from "../lib/types";
 
 loadEnvConfig(process.cwd());
@@ -30,21 +31,8 @@ const NAMES = ["Asha", "Rahul", "Neha", "Vikram", "Pooja", "Arjun"];
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
 async function main() {
-  const { adminAuth, adminDb: db } = await import("../lib/admin");
-  const { createBill } = await import("../lib/billing");
-  async function ensureUser(email: string, password: string, name: string, role: string, businessIds: string[]) {
-    let u;
-    try { u = await adminAuth.getUserByEmail(email); } catch { u = await adminAuth.createUser({ email, password, displayName: name }); }
-    await adminAuth.setCustomUserClaims(u.uid, { role, businessIds });
-    await db.doc(`users/${u.uid}`).set({ name, email, role, businessIds });
-    return u.uid;
-  }
-  const owner = await ensureUser("avishnuselvam@gmail.com", "Vishnu@123", "Owner", "owner", ["sam-studio", "parlour"]);
-  if (process.argv.includes("--users-only")) {
-    console.log("Owner role configured. Sign out and sign back in to refresh your account claims.");
-    return;
-  }
-  await ensureUser("staff@example.com", "ChangeMe123!", "Staff", "staff", ["parlour"]);
+  const { adminDb: db } = await import("../lib/admin");
+  const { createBill, reserveReceiptNumber } = await import("../lib/billing");
 
   for (const id of Object.keys(DATA) as BusinessId[]) {
     const d = DATA[id];
@@ -76,16 +64,19 @@ async function main() {
         const c = pick(custs);
         const r = Math.random();
         const when = Date.now() - day * 864e5 - Math.floor(Math.random() * 8 * 36e5);
+        const receiptReservationId = randomUUID();
+        const receiptNumber = await reserveReceiptNumber(id, receiptReservationId);
         await createBill({
           businessId: id, billType: Math.random() < 0.4 ? "gst" : "normal",
           customer: { id: c.id, name: c.name, phone: c.phone, state: c.state }, items,
           paymentMethod: pick<PayMethod>(["cash", "upi", "card"]),
           paidAmount: r < 0.7 ? 1e9 : r < 0.85 ? 500 : 0, createdAt: when,
-        }, owner);
+          receiptNumber, receiptReservationId,
+        });
       }
     }
     console.log("Seeded", id);
   }
-  console.log("Done. Logins: avishnuselvam@gmail.com / Vishnu@123 (owner), staff@example.com / ChangeMe123! (staff).");
+  console.log("Done.");
 }
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

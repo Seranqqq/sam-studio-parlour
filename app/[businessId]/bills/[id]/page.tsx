@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth-context";
 import { downloadInvoicePdf } from "@/lib/download-invoice";
 import InvoiceView from "@/components/InvoiceView";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import type { Bill } from "@/lib/types";
 
 export default function BillPage() {
   const { businessId, id } = useParams<{ businessId: string; id: string }>();
-  const { role } = useAuth();
   const [bill, setBill] = useState<Bill | null>(null);
   const [link, setLink] = useState("");
 
@@ -32,8 +30,8 @@ export default function BillPage() {
     <div className="mx-auto max-w-3xl">
       <div className="no-print mb-3 flex flex-wrap gap-2">
         <Button onClick={() => downloadInvoicePdf(bill)}>Download PDF</Button>
-        {role === "owner" && <Button variant="outline" onClick={share}>Share link</Button>}
-        {role === "owner" && bill.status !== "cancelled" && (
+        <Button variant="outline" onClick={share}>Share link</Button>
+        {bill.status !== "cancelled" && (
           <Button variant="outline" asChild><Link href={`/${businessId}/bills/${id}/edit`}>Edit</Link></Button>
         )}
         <Button variant="outline" asChild><Link href={`/${businessId}/create-bill`}>New bill</Link></Button>

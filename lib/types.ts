@@ -23,7 +23,7 @@ export interface Bill extends Totals {
   customer: CustomerSnap; items: BillItem[]; paymentMethod: PayMethod; paidAmount: number;
   status: "paid" | "partial" | "unpaid" | "cancelled"; interState: boolean;
   business: { name: string; gstin?: string; address?: string; state?: string; phone?: string };
-  createdBy: string; createdAt: number; dateKey: string; notes?: string;
+  createdAt: number; dateKey: string; notes?: string;
 }
 export interface BillInput {
   businessId: BusinessId; billType: BillType; customer: CustomerSnap; items: BillItem[];

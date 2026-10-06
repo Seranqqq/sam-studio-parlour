@@ -1,8 +1,7 @@
 import { randomBytes } from "crypto";
-import { route, requireUser, adminDb, HttpError } from "@/lib/admin";
+import { route, adminDb, HttpError } from "@/lib/admin";
 
 export const POST = route(async (req) => {
-  await requireUser(req, true);
   const { billId } = await req.json();
   const bill = await adminDb.doc(`bills/${billId}`).get();
   if (!bill.exists) throw new HttpError(404, "Bill not found");

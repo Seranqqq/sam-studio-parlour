@@ -1,9 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
@@ -11,7 +10,6 @@ import { isBusinessId, type Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import PasswordInput from "@/components/PasswordInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
@@ -21,67 +19,8 @@ export default function SettingsPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Settings</h1>
       <Profile businessId={businessId} />
-      <PasswordSettings />
       <Services businessId={businessId} />
     </div>
-  );
-}
-
-function PasswordSettings() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function resetPassword() {
-    setMsg("");
-    setErr("");
-    if (newPassword.length < 6) return setErr("New password must be at least 6 characters");
-    if (newPassword !== confirmPassword) return setErr("New passwords do not match");
-
-    const user = auth.currentUser;
-    if (!user?.email) return setErr("Password reset is unavailable for this account");
-
-    setBusy(true);
-    try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setMsg("Password updated");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not update password");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader className="pb-2"><CardTitle className="text-base">Reset password</CardTitle></CardHeader>
-      <CardContent className="grid gap-3 sm:grid-cols-2">
-        <div><Label className="mb-1">Current password</Label>
-          <PasswordInput autoComplete="current-password" value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)} /></div>
-        <div><Label className="mb-1">New password</Label>
-          <PasswordInput autoComplete="new-password" value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)} /></div>
-        <div><Label className="mb-1">Confirm new password</Label>
-          <PasswordInput autoComplete="new-password" value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)} /></div>
-        <div className="flex items-end gap-3">
-          <Button disabled={busy || !currentPassword || !newPassword || !confirmPassword} onClick={resetPassword}>
-            {busy ? "Updating…" : "Reset password"}
-          </Button>
-          {msg && <span className="text-sm text-green-700">{msg}</span>}
-          {err && <span className="text-sm text-red-600">{err}</span>}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

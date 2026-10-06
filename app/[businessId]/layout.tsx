@@ -2,13 +2,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { BarChart3, Camera, FilePlus2, LayoutDashboard, LogOut, Menu, Receipt, Settings, Sparkles, Users, X } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
+import { BarChart3, Camera, FilePlus2, LayoutDashboard, Menu, Receipt, Settings, Sparkles, Users, X } from "lucide-react";
 import { BUSINESSES, isBusinessId } from "@/lib/types";
 import { sel } from "@/lib/ui";
-import { Button } from "@/components/ui/button";
 
 const NAV = [
   ["dashboard", "Dashboard", LayoutDashboard],
@@ -19,6 +15,7 @@ const NAV = [
   ["settings", "Settings", Settings],
 ] as const;
 const ALL_OK = ["dashboard", "reports"];
+const BUSINESS_OPTIONS = ["sam-studio", "parlour", "all"] as const;
 const BRANDING = {
   "sam-studio": { tagline: "Every frame tells a story.", Icon: Camera },
   parlour: { tagline: "Beauty, beautifully managed.", Icon: Sparkles },
@@ -28,22 +25,17 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const { businessId } = useParams<{ businessId: string }>();
   const path = usePathname();
   const router = useRouter();
-  const { user, role, businessIds, loading, error } = useAuth();
   const [open, setOpen] = useState(false);
   const parts = path.split("/");
   const section = parts[2] ?? "dashboard";
-  const allowed = role === "owner" ? ["sam-studio", "parlour", "all"] : businessIds;
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) return void router.replace("/login");
-    if (!role) return;
-    if (!allowed.includes(businessId) || !(isBusinessId(businessId) || businessId === "all"))
-      return void router.replace("/");
-    const staffOk = section === "create-bill" || (section === "bills" && parts.length > 3 && !path.endsWith("/edit"));
-    if (role === "staff" && !staffOk) return void router.replace(`/${businessId}/create-bill`);
+    if (!isBusinessId(businessId) && businessId !== "all") {
+      router.replace("/sam-studio/dashboard");
+      return;
+    }
     if (businessId === "all" && !ALL_OK.includes(section)) router.replace("/all/dashboard");
-  }, [loading, user, role, businessId, section, path]); // eslint-disable-line
+  }, [router, businessId, section]);
 
   // close the drawer on navigation
   useEffect(() => setOpen(false), [path]);
@@ -60,14 +52,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     };
   }, [open]);
 
-  if (loading) return <p className="p-8 text-sm text-muted-foreground">Loading…</p>;
-  if (error) return <p className="p-8 text-sm text-red-600">{error}</p>;
-  if (user && !role) return <p className="p-8 text-sm">Your account has no role yet. Ask the owner to set you up.</p>;
-  if (!user || !role) return null;
-
-  const nav = NAV.filter(([k]) => role === "owner" || k === "create-bill").filter(
-    ([k]) => businessId !== "all" || ALL_OK.includes(k)
-  );
+  const nav = NAV.filter(([k]) => businessId !== "all" || ALL_OK.includes(k));
   const bizName = isBusinessId(businessId) ? BUSINESSES[businessId].name : "All businesses";
   const brand = isBusinessId(businessId) ? BRANDING[businessId] : null;
   const pageTitle = NAV.find(([k]) => k === section)?.[1] ?? "";
@@ -119,19 +104,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               router.push(`/${v}/${v === "all" && !ALL_OK.includes(section) ? "dashboard" : section}`);
             }}
           >
-            {allowed.map((b) => (
+            {BUSINESS_OPTIONS.map((b) => (
               <option key={b} value={b} className="text-slate-900">
                 {b === "all" ? "All businesses" : BUSINESSES[b as keyof typeof BUSINESSES].name}
               </option>
             ))}
           </select>
 
-          <span className="ml-auto hidden text-xs text-white/80 md:block">
-            {user.email} ({role})
-          </span>
-          <Button variant="outline" size="sm" className="hidden border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white md:inline-flex" onClick={() => signOut(auth)}>
-            <LogOut size={16} /> Sign out
-          </Button>
         </header>
 
         <main className="mx-auto max-w-5xl p-3 md:p-6">{children}</main>
@@ -164,19 +143,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             </div>
             <p className="text-lg font-semibold leading-tight">{bizName}</p>
             <p className="mt-0.5 text-xs text-white/80">{brand?.tagline ?? "Billing dashboard"}</p>
-            <p className="mt-0.5 truncate text-xs opacity-80">{user.email}</p>
-            <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium capitalize">
-              {role}
-            </span>
           </div>
 
           <nav className="flex-1 overflow-y-auto p-3">{links(true)}</nav>
-
-          <div className="border-t p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-            <Button variant="outline" className="h-11 w-full text-red-600" onClick={() => signOut(auth)}>
-              <LogOut size={17} /> Sign out
-            </Button>
-          </div>
         </aside>
       </div>
     </div>

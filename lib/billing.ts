@@ -61,9 +61,9 @@ const writeItems = (tx: Transaction, b: Bill) =>
 const isInterState = (billType: string, custState?: string, bizState?: string) =>
   billType === "gst" && !!custState && !!bizState && custState.trim().toLowerCase() !== bizState.trim().toLowerCase();
 
-export async function reserveReceiptNumber(businessId: string, uid: string, reservationId: string) {
+export async function reserveReceiptNumber(businessId: string, reservationId: string) {
   if (!/^[\da-f-]{36}$/i.test(reservationId)) throw new HttpError(400, "Invalid receipt reservation");
-  const reservationRef = db.doc(`receiptReservations/${businessId}_${uid}_${reservationId}`);
+  const reservationRef = db.doc(`receiptReservations/${businessId}_${reservationId}`);
   const bizRef = db.doc(`businesses/${businessId}`);
 
   return db.runTransaction(async (tx) => {
@@ -88,13 +88,13 @@ export async function reserveReceiptNumber(businessId: string, uid: string, rese
     }
 
     const receiptNumber = `REC-${String(lastNumber + 1).padStart(6, "0")}`;
-    tx.set(reservationRef, { businessId, uid, receiptNumber });
+    tx.set(reservationRef, { businessId, receiptNumber });
     tx.update(bizRef, { "counters.receipt": lastNumber + 1 });
     return receiptNumber;
   });
 }
 
-export async function createBill(inp: BillInput, uid: string) {
+export async function createBill(inp: BillInput) {
   const { businessId, billType } = inp;
   if (!/^REC-\d{6,}$/.test(inp.receiptNumber ?? "") || !/^[\da-f-]{36}$/i.test(inp.receiptReservationId ?? ""))
     throw new HttpError(400, "Receipt number is missing or invalid");
@@ -104,7 +104,7 @@ export async function createBill(inp: BillInput, uid: string) {
   const { dateKey } = dateParts(createdAt);
   const bizRef = db.doc(`businesses/${businessId}`);
   const billRef = db.collection("bills").doc();
-  const reservationRef = db.doc(`receiptReservations/${businessId}_${uid}_${inp.receiptReservationId}`);
+  const reservationRef = db.doc(`receiptReservations/${businessId}_${inp.receiptReservationId}`);
 
   await db.runTransaction(async (tx) => {
     const [bizSnap, custSnap, reservationSnap] = await Promise.all([
@@ -132,7 +132,7 @@ export async function createBill(inp: BillInput, uid: string) {
       customer: { ...customer, id: customerId }, items, paymentMethod: inp.paymentMethod,
       paidAmount: paid, status: statusFor(t.total, paid), interState,
       business: { name: biz.name, gstin: biz.gstin, address: biz.address, state: biz.state, phone: biz.phone },
-      createdBy: uid, createdAt, dateKey, notes: inp.notes,
+      createdAt, dateKey, notes: inp.notes,
     };
     tx.set(billRef, bill);
     writeItems(tx, bill);

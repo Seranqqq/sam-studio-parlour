@@ -18,19 +18,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Access
+
+The dashboard and billing APIs do not require sign-in. Anyone who can reach the deployment can view billing data and use the billing APIs. Use deployment- or network-level access controls if this data must remain private.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Development test account
-
-For development only, `.env.development.local` enables startup provisioning of
-the default test account. Its password is read by the server from
-`SERAN_DEFAULT_USER_PASSWORD`; the bootstrap only runs when
-`SERAN_DEFAULT_USER_ENABLED=true` and `NODE_ENV=development`.
-
-Provisioning creates a Firebase Authentication account and stores its username,
-role, and business access in the existing `users/{uid}` Firestore document.
-Firestore does not store the password. Keep development Firebase configuration
-separate from production; the bootstrap does not run in production.
 
 ## Learn More
 
