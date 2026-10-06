@@ -20,6 +20,18 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Development test account
+
+For development only, `.env.development.local` enables startup provisioning of
+the default test account. Its password is read by the server from
+`SERAN_DEFAULT_USER_PASSWORD`; the bootstrap only runs when
+`SERAN_DEFAULT_USER_ENABLED=true` and `NODE_ENV=development`.
+
+Provisioning creates a Firebase Authentication account and stores its username,
+role, and business access in the existing `users/{uid}` Firestore document.
+Firestore does not store the password. Keep development Firebase configuration
+separate from production; the bootstrap does not run in production.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

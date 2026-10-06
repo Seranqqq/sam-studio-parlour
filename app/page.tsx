@@ -12,7 +12,11 @@ export default function Home() {
   const router = useRouter();
   useEffect(() => {
     if (loading) return;
-    if (!user) return router.replace("/login");
+    if (!user) {
+      return router.replace(
+        process.env.NODE_ENV === "development" ? "/sam-studio/dashboard" : "/login"
+      );
+    }
     if (!role) return;
     let selectedBusiness = "sam-studio";
     if (role === "owner") {
