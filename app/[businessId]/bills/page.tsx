@@ -150,7 +150,10 @@ export default function Bills() {
                     Download PDF
                   </Button>
                   {b.status !== "cancelled" && b.status !== "paid" && (
-                    <Button size="sm" variant="outline" onClick={() => act(() => api(`/api/bills/${b.id}/pay`, "POST", {}))}>Mark paid</Button>)}
+                    <Button size="sm" variant="outline" onClick={() => act(() => api(`/api/bills/${b.id}/pay`, "POST", {
+                      businessId, amount: Math.round((b.total - b.paidAmount) * 100) / 100,
+                      method: b.paymentMethod, paymentId: crypto.randomUUID(),
+                    }))}>Mark paid</Button>)}
                   {b.status !== "cancelled" && (
                     <Button size="sm" variant="outline" className="text-red-600"
                       onClick={() => confirm(b.billType === "gst" ? "Cancel this GST invoice?" : "Delete this bill?") && act(() => api(`/api/bills/${b.id}`, "DELETE"))}>

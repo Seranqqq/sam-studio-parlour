@@ -92,6 +92,7 @@ export default function Reports() {
         </Box>
         <Pie2 title="Paid vs unpaid" data={[{ name: "Paid", value: Math.round(a?.paid ?? 0) }, { name: "Unpaid", value: Math.round(a?.unpaid ?? 0) }]} />
         <Pie2 title="Payment methods" data={rows(a?.byMethod)} />
+        <Pie2 title="Best-selling items" data={rows(a?.byService)} />
         <Pie2 title="Normal vs GST bills" data={[{ name: "Normal", value: a?.normalCount ?? 0 }, { name: "GST", value: a?.gstCount ?? 0 }]} />
         <Bars title="Top customers (lifetime)" data={top} />
         <Card>

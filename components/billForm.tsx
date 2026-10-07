@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { computeTotals } from "@/lib/calc";
 import { inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
-import type { Bill, BillItem, BillType, BusinessId, CustomerSnap, PayMethod, Service } from "@/lib/types";
+import type { Bill, BillEntryBy, BillItem, BillType, BusinessId, CustomerSnap, PayMethod, Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ export default function BillForm({ businessId, initial }: { businessId: Business
   const [cust, setCust] = useState<CustomerSnap>(initial?.customer ?? emptyCust);
   const [items, setItems] = useState<BillItem[]>(initial?.items ?? [blank()]);
   const [method, setMethod] = useState<PayMethod>(initial?.paymentMethod ?? "cash");
+  const [createdBy, setCreatedBy] = useState<BillEntryBy>(initial?.createdBy ?? "owner");
   const [paid, setPaid] = useState<string>(initial ? String(initial.paidAmount) : "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [services, setServices] = useState<Service[]>([]);
@@ -90,7 +91,7 @@ export default function BillForm({ businessId, initial }: { businessId: Business
     try {
       const body = {
         businessId, billType, customer: cust, items: items.filter((i) => i.name),
-        paymentMethod: method, paidAmount: paidNum, notes,
+        paymentMethod: method, paidAmount: paidNum, notes, createdBy,
         ...(initial ? {} : { receiptNumber, receiptReservationId }),
       };
       const r = initial ? await api(`/api/bills/${initial.id}`, "PATCH", body) : await api("/api/bills", "POST", body);
@@ -174,6 +175,11 @@ export default function BillForm({ businessId, initial }: { businessId: Business
 
       <Card>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
+          <div><Label className="mb-1">Bill entered by</Label>
+            <select className={sel} value={createdBy} onChange={(e) => setCreatedBy(e.target.value as BillEntryBy)}>
+              <option value="owner">Owner</option>
+              <option value="staff">Staff</option>
+            </select></div>
           <div><Label className="mb-1">Payment method</Label>
             <select className={sel} value={method} onChange={(e) => setMethod(e.target.value as PayMethod)}>
               <option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option>

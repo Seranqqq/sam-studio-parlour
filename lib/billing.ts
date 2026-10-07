@@ -96,6 +96,7 @@ export async function reserveReceiptNumber(businessId: string, reservationId: st
 
 export async function createBill(inp: BillInput) {
   const { businessId, billType } = inp;
+  const createdBy = inp.createdBy ?? "owner";
   if (!/^REC-\d{6,}$/.test(inp.receiptNumber ?? "") || !/^[\da-f-]{36}$/i.test(inp.receiptReservationId ?? ""))
     throw new HttpError(400, "Receipt number is missing or invalid");
   const items = cleanItems(inp.items);
@@ -130,7 +131,7 @@ export async function createBill(inp: BillInput) {
     const bill: Bill = {
       ...t, id: billRef.id, businessId, billType, billNumber, receiptNumber: inp.receiptNumber, seq,
       customer: { ...customer, id: customerId }, items, paymentMethod: inp.paymentMethod,
-      paidAmount: paid, status: statusFor(t.total, paid), interState,
+      paidAmount: paid, createdBy, status: statusFor(t.total, paid), interState,
       business: { name: biz.name, gstin: biz.gstin, address: biz.address, state: biz.state, phone: biz.phone },
       createdAt, dateKey, notes: inp.notes,
     };
@@ -179,7 +180,7 @@ export async function updateBill(id: string, inp: BillInput) {
     const paid = Math.min(Math.max(Number(inp.paidAmount) || 0, 0), t.total);
     const bill: Bill = {
       ...old, ...t, items, customer, paymentMethod: inp.paymentMethod, paidAmount: paid,
-      status: statusFor(t.total, paid), interState, notes: inp.notes,
+      createdBy: inp.createdBy ?? old.createdBy ?? "owner", status: statusFor(t.total, paid), interState, notes: inp.notes,
     };
     tx.set(ref, bill);
     itemsQ.docs.forEach((d) => tx.delete(d.ref));
@@ -193,19 +194,43 @@ export async function updateBill(id: string, inp: BillInput) {
   });
 }
 
-export async function payBill(id: string, amount?: number, method?: PayMethod) {
+export async function payBill(
+  id: string,
+  businessId: string,
+  amount: number,
+  method: PayMethod,
+  paymentId: string,
+) {
+  if (!Number.isFinite(amount) || amount <= 0 || Number(amount.toFixed(2)) !== amount)
+    throw new HttpError(400, "Enter a valid payment amount with up to two decimal places");
+  if (!["cash", "upi", "card"].includes(method)) throw new HttpError(400, "Invalid payment method");
+  if (!/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(paymentId))
+    throw new HttpError(400, "Invalid payment ID");
+
   await db.runTransaction(async (tx) => {
     const ref = db.doc(`bills/${id}`);
-    const b = (await tx.get(ref)).data() as Bill | undefined;
+    const paymentRef = db.doc(`payments/${paymentId}`);
+    const [billSnap, paymentSnap] = await Promise.all([tx.get(ref), tx.get(paymentRef)]);
+    const b = billSnap.data() as Bill | undefined;
+    if (paymentSnap.exists) {
+      const payment = paymentSnap.data()!;
+      if (payment.businessId !== businessId || payment.billId !== id || payment.amount !== amount || payment.method !== method)
+        throw new HttpError(409, "This payment ID has already been used for a different payment");
+      return;
+    }
     if (!b) throw new HttpError(404, "Bill not found");
+    if (b.businessId !== businessId) throw new HttpError(404, "Bill not found");
     if (b.status === "cancelled") throw new HttpError(400, "Bill is cancelled");
-    const due = b.total - b.paidAmount;
-    const amt = Math.min(amount && amount > 0 ? amount : due, due);
-    if (amt <= 0) throw new HttpError(400, "Nothing due");
-    const paid = b.paidAmount + amt;
+    const amt = Math.round(amount * 100) / 100;
+    const due = Math.round((b.total - b.paidAmount) * 100) / 100;
+    if (due <= 0) throw new HttpError(400, "Nothing due");
+    if (amt > due) throw new HttpError(400, "Payment amount cannot exceed the amount due");
+    const paid = Math.round((b.paidAmount + amt) * 100) / 100;
     tx.update(ref, { paidAmount: paid, status: statusFor(b.total, paid) });
-    tx.set(db.collection("payments").doc(), {
-      businessId: b.businessId, billId: id, amount: amt, method: method ?? b.paymentMethod, type: "balance", createdAt: Date.now(),
+    const processedAt = Date.now();
+    tx.create(paymentRef, {
+      businessId: b.businessId, billId: id, amount: amt, method, type: "balance",
+      currency: "INR", status: "paid", source: "manual", createdAt: processedAt, processedAt,
     });
     const f: Flat = {};
     addFlat(f, "paid", amt); addFlat(f, "unpaid", -amt); addFlat(f, "byPayType.balance", amt);

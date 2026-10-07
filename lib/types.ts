@@ -6,6 +6,7 @@ export type BusinessId = keyof typeof BUSINESSES;
 export const isBusinessId = (v: string): v is BusinessId => v in BUSINESSES;
 
 export type BillType = "normal" | "gst";
+export type BillEntryBy = "owner" | "staff";
 export type PayMethod = "cash" | "upi" | "card";
 export type ItemType = "service" | "product" | "package" | "membership";
 
@@ -20,14 +21,14 @@ export interface Totals {
 }
 export interface Bill extends Totals {
   id: string; businessId: BusinessId; billType: BillType; billNumber: string; receiptNumber?: string; seq: number;
-  customer: CustomerSnap; items: BillItem[]; paymentMethod: PayMethod; paidAmount: number;
+  customer: CustomerSnap; items: BillItem[]; paymentMethod: PayMethod; paidAmount: number; createdBy: BillEntryBy;
   status: "paid" | "partial" | "unpaid" | "cancelled"; interState: boolean;
   business: { name: string; gstin?: string; address?: string; state?: string; phone?: string };
   createdAt: number; dateKey: string; notes?: string;
 }
 export interface BillInput {
   businessId: BusinessId; billType: BillType; customer: CustomerSnap; items: BillItem[];
-  paymentMethod: PayMethod; paidAmount: number; notes?: string; createdAt?: number;
+  paymentMethod: PayMethod; paidAmount: number; notes?: string; createdAt?: number; createdBy?: BillEntryBy;
   receiptNumber?: string; receiptReservationId?: string;
 }
 export interface Service {
