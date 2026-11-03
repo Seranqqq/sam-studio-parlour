@@ -26,3 +26,5 @@ service cloud.firestore {
     match /publicShares/{id} { allow read, write: if false; }
   }
 }
+
+okay
