@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
@@ -20,8 +20,57 @@ export default function SettingsPage() {
       <h1 className="text-xl font-semibold">Settings</h1>
       <Profile businessId={businessId} />
       <StaffRoster businessId={businessId} />
+      <GoogleSheets />
       <Services businessId={businessId} />
     </div>
+  );
+}
+
+function GoogleSheets() {
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState("");
+  const [error, setError] = useState("");
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    api<{ spreadsheetUrl: string | null }>("/api/google-sheets", "GET")
+      .then((result) => setSpreadsheetUrl(result.spreadsheetUrl ?? ""))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Could not load Google Sheets status"));
+  }, []);
+
+  async function connect() {
+    setError("");
+    setConnecting(true);
+    try {
+      const result = await api<{ spreadsheetUrl: string; syncError?: string }>("/api/google-sheets", "POST");
+      setSpreadsheetUrl(result.spreadsheetUrl);
+      if (result.syncError) setError(`Connected, but existing bills could not all be synced: ${result.syncError}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not connect Google Sheets");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-base">Google Sheets</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Keep Sam Studio and THRESH SALOON bills in separate tabs in one spreadsheet.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" onClick={connect} disabled={connecting}>
+            {connecting ? "Connecting…" : spreadsheetUrl ? "Connect & sync bills" : "Connect Google Sheets"}
+          </Button>
+          {spreadsheetUrl && (
+            <a className="text-sm text-blue-600 underline" href={spreadsheetUrl} target="_blank" rel="noreferrer">
+              Open billing spreadsheet
+            </a>
+          )}
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -60,12 +109,29 @@ function StaffRoster({ businessId }: { businessId: BusinessId }) {
     }
     setSaving(true);
     try {
-      await updateDoc(doc(db, "businesses", businessId), { staff: arrayUnion(...staff, newName) });
-      setStaff((current) => [...current, newName]);
+      const updatedStaff = [...staff, newName];
+      await setDoc(doc(db, "businesses", businessId), { staff: updatedStaff }, { merge: true });
+      setStaff(updatedStaff);
       setName("");
       setMessage("Staff member added");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add staff member");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeStaff(member: string) {
+    setError("");
+    setMessage("");
+    setSaving(true);
+    try {
+      const updatedStaff = staff.filter((existing) => existing !== member);
+      await setDoc(doc(db, "businesses", businessId), { staff: updatedStaff }, { merge: true });
+      setStaff(updatedStaff);
+      setMessage(`${member} removed`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not remove staff member");
     } finally {
       setSaving(false);
     }
@@ -83,7 +149,21 @@ function StaffRoster({ businessId }: { businessId: BusinessId }) {
         {error && <p className="text-sm text-red-600">{error}</p>}
         {message && <p className="text-sm text-green-700">{message}</p>}
         <ul className="flex flex-wrap gap-2 text-sm">
-          {staff.map((member) => <li key={member} className="rounded-full border px-3 py-1">{member}</li>)}
+          {staff.map((member) => (
+            <li key={member} className="flex items-center gap-2 rounded-full border py-1 pl-3 pr-1">
+              {member}
+              <Button
+                type="button"
+                size="xs"
+                variant="destructive"
+                disabled={saving}
+                aria-label={`Remove ${member}`}
+                onClick={() => removeStaff(member)}
+              >
+                Remove
+              </Button>
+            </li>
+          ))}
         </ul>
       </CardContent>
     </Card>

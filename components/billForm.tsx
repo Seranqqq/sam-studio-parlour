@@ -108,8 +108,12 @@ export default function BillForm({ businessId, initial }: { businessId: Business
         createdByNames: createdBy === "staff" ? createdByNames : undefined,
         ...(initial ? {} : { receiptNumber, receiptReservationId }),
       };
-      const r = initial ? await api(`/api/bills/${initial.id}`, "PATCH", body) : await api("/api/bills", "POST", body);
-      router.push(`/${businessId}/bills/${initial ? initial.id : r.id}`);
+      const r = initial
+        ? await api<{ sheetSyncError?: string }>(`/api/bills/${initial.id}`, "PATCH", body)
+        : await api<{ id: string; sheetSyncError?: string }>("/api/bills", "POST", body);
+      const billId = initial ? initial.id : "id" in r ? r.id : "";
+      if (r.sheetSyncError) window.alert(`Bill saved, but Google Sheets sync failed: ${r.sheetSyncError}`);
+      router.push(`/${businessId}/bills/${billId}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to save bill");
       setBusy(false);

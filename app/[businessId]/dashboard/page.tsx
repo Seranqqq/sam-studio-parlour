@@ -6,7 +6,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { db } from "@/lib/firebase";
 import { addDays, dateParts, inr } from "@/lib/format";
 import { useBusinessId } from "@/lib/use-business-id";
-import type { Bill } from "@/lib/types";
+import { receiptNumberForBill, type Bill } from "@/lib/types";
 import Stat from "@/components/ui/Stat";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,7 +115,7 @@ export default function Dashboard() {
           <CardContent className="space-y-2">
             {recent.map((b) => (
               <Link key={b.id} href={`/${businessId}/bills/${b.id}`} className="flex items-center justify-between text-sm">
-                <span>{b.receiptNumber ?? "—"} · {b.customer.name}</span>
+                <span>{receiptNumberForBill(b)} · {b.customer.name}</span>
                 <span className="flex items-center gap-2">{inr(b.total)} <Badge variant="outline">{b.status}</Badge></span>
               </Link>
             ))}

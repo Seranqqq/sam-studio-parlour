@@ -1,5 +1,6 @@
 import { HttpError, route } from "@/lib/admin";
 import { payBill } from "@/lib/billing";
+import { syncBillWithWarning } from "@/lib/google-sheets";
 import { isBusinessId } from "@/lib/types";
 
 export const POST = route(async (req, ctx) => {
@@ -12,5 +13,5 @@ export const POST = route(async (req, ctx) => {
   if (!["cash", "upi", "card"].includes(method)) throw new HttpError(400, "Invalid payment method");
   if (typeof paymentId !== "string") throw new HttpError(400, "Payment ID is required");
   await payBill(id, businessId, amount, method, paymentId);
-  return { ok: true };
+  return { ok: true, sheetSyncError: await syncBillWithWarning(id) };
 });

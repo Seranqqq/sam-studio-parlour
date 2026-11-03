@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
 import { fmtDateTime, inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
-import { isBusinessId, type Bill } from "@/lib/types";
+import { isBusinessId, receiptNumberForBill, type Bill } from "@/lib/types";
 import { useBusinessId } from "@/lib/use-business-id";
 import { downloadInvoicePdf } from "@/lib/download-invoice";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ export default function Bills() {
   useEffect(() => { load(); }, [load]);
 
   const rows = useMemo(() => bills.filter((b) =>
-    (!q || (b.billNumber + (b.receiptNumber ?? "") + b.customer.name + (b.customer.phone ?? "")).toLowerCase().includes(q.toLowerCase())) &&
+    (!q || (b.billNumber + receiptNumberForBill(b) + b.customer.name + (b.customer.phone ?? "")).toLowerCase().includes(q.toLowerCase())) &&
     (!type || b.billType === type) && (!status || b.status === status) && (!method || b.paymentMethod === method) &&
     (!from || b.dateKey >= from) && (!to || b.dateKey <= to)), [bills, q, type, status, method, from, to]);
   const selectedCount = rows.filter((b) => selectedIds.has(b.id)).length;
@@ -51,14 +51,22 @@ export default function Bills() {
   }, [partiallySelected]);
 
   async function act(fn: () => Promise<unknown>) {
-    try { await fn(); await load(); } catch (e: any) { alert(e.message); }
+    try {
+      const result = await fn();
+      if (result && typeof result === "object" && "sheetSyncError" in result
+        && typeof result.sheetSyncError === "string")
+        alert(`Bill saved, but Google Sheets sync failed: ${result.sheetSyncError}`);
+      await load();
+    } catch (e: any) { alert(e.message); }
   }
 
   async function deleteSelected() {
     const ids = rows.filter((b) => selectedIds.has(b.id)).map((b) => b.id);
     if (!ids.length || !confirm("Are you sure you want to delete the selected bills?")) return;
     try {
-      await api("/api/bills/bulk", "DELETE", { ids });
+      const result = await api<{ sheetSyncError?: string }>("/api/bills/bulk", "DELETE", { ids });
+      if (result.sheetSyncError)
+        alert(`Bills were updated, but Google Sheets sync failed: ${result.sheetSyncError}`);
       setSelectedIds(new Set());
       await load();
     } catch (e) {
@@ -138,7 +146,7 @@ export default function Bills() {
                     }}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{b.receiptNumber ?? "—"}</TableCell>
+                <TableCell className="font-medium">{receiptNumberForBill(b)}</TableCell>
                 <TableCell className="whitespace-nowrap">{fmtDateTime(b.createdAt)}</TableCell>
                 <TableCell>{b.customer.name}</TableCell>
                 <TableCell><Badge variant={b.billType === "gst" ? "default" : "secondary"}>{b.billType.toUpperCase()}</Badge></TableCell>

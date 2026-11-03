@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import type { Bill } from "@/lib/types";
+import { receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime } from "@/lib/format";
 
 const money = (value: number) => `Rs. ${Number(value || 0).toFixed(2)}`;
@@ -43,7 +44,7 @@ export function downloadInvoicePdf(bill: Bill) {
   pdf.text(title, right, 20, { align: "right" });
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  pdf.text(bill.receiptNumber ?? bill.billNumber, right, 27, { align: "right" });
+  pdf.text(receiptNumberForBill(bill), right, 27, { align: "right" });
   pdf.text(fmtDateTime(bill.createdAt), right, 33, { align: "right" });
   if (bill.status === "cancelled") {
     pdf.setTextColor(190, 35, 35);
@@ -140,6 +141,6 @@ export function downloadInvoicePdf(bill: Bill) {
   pdf.setTextColor(110);
   pdf.text("Thank you for your business!", pageWidth / 2, y, { align: "center" });
 
-  const filename = (bill.receiptNumber ?? bill.billNumber).replace(/[^\w-]/g, "_");
+  const filename = receiptNumberForBill(bill).replace(/[^\w-]/g, "_");
   pdf.save(`${filename}.pdf`);
 }

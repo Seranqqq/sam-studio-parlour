@@ -32,6 +32,13 @@ export interface Bill extends Totals {
   business: { name: string; gstin?: string; address?: string; state?: string; phone?: string };
   createdAt: number; dateKey: string; notes?: string;
 }
+export function receiptNumberForBill(bill: Pick<Bill, "businessId" | "receiptNumber" | "billNumber">) {
+  const number = bill.receiptNumber ?? bill.billNumber;
+  const match = /^(?:(?:SS|PL)-)?REC-(\d+)$/.exec(number);
+  if (!match) return number;
+  const sequence = match[1].replace(/^0+(?=\d)/, "").padStart(2, "0");
+  return `${BUSINESSES[bill.businessId].prefix}-REC-${sequence}`;
+}
 export interface BillInput {
   businessId: BusinessId; billType: BillType; customer: CustomerSnap; items: BillItem[];
   paymentMethod: PayMethod; paidAmount: number; notes?: string; createdAt?: number; createdBy?: BillEntryBy;

@@ -3,6 +3,9 @@ service cloud.firestore {
   match /databases/{db}/documents {
     match /businesses/{id} {
       allow read: if true;
+      allow create: if id in ['sam-studio', 'parlour']
+        && request.resource.data.keys().hasOnly(['staff'])
+        && request.resource.data.staff is list;
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
         .hasOnly(['name','gstin','address','state','phone','defaultTaxRate','staff']);
     }

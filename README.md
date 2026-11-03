@@ -22,6 +22,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 The dashboard and billing APIs do not require sign-in. Anyone who can reach the deployment can view billing data and use the billing APIs. Use deployment- or network-level access controls if this data must remain private.
 
+## Google Sheets billing sync
+
+The app sends bill data to the Apps Script web app in `scripts/google-sheets-appscript.gs`. Paste that file into the Apps Script project attached to the target spreadsheet. The spreadsheet must contain **Sheet1** for Sam Studio and **Sheet2** for THRESH SALOON; the script creates either tab if it is missing.
+
+In Apps Script **Project Settings → Script properties**, set `SYNC_TOKEN` to the same random secret as `GOOGLE_APPS_SCRIPT_TOKEN`. Set `GOOGLE_APPS_SCRIPT_URL` to the deployed `/exec` URL in `.env.local` and the production environment. Deploy the script as a web app that executes as your Google account and allows access to **Anyone**, then deploy a new version. The script checks the shared token before writing any rows.
+
+In app **Settings**, choose **Connect Google Sheets** to initialize the tabs and import existing bills. New bills, edits, payment updates, cancellations, and deletions are synced automatically. The Settings button can be used to retry syncing existing bills after a temporary error.
+
+Receipt numbers are independently counted per business and include a business prefix, starting with `SS-REC-01` for Sam Studio and `PL-REC-01` for THRESH SALOON. Existing receipt sequences continue without reusing numbers.
+
 ## Recording a missed payment
 
 Open a business dashboard's **Payments** page to record money already received against an outstanding bill. The payment is written on the server in a Firestore transaction, which updates the bill and creates one payment-history record using an idempotent payment ID. Use **Add missing bill** to create a bill that was not recorded at the time of purchase. This app does not integrate with an online payment provider; recording a payment is a manual confirmation and must only be used after the money has actually been received.

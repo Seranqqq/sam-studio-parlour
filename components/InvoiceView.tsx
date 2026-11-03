@@ -1,4 +1,5 @@
 import type { Bill } from "@/lib/types";
+import { receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime, inr } from "@/lib/format";
 
 export default function InvoiceView({ bill: b }: { bill: Bill }) {
@@ -15,7 +16,7 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
         </div>
         <div className="text-right">
           <p className="font-semibold">{gst ? "TAX INVOICE" : "BILL"}</p>
-          <p>{b.receiptNumber ?? "—"}</p>
+          <p>{receiptNumberForBill(b)}</p>
           <p>{fmtDateTime(b.createdAt)}</p>
           {b.status === "cancelled" && <p className="font-bold text-red-600">CANCELLED</p>}
         </div>

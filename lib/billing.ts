@@ -78,6 +78,7 @@ const isInterState = (billType: string, custState?: string, bizState?: string) =
   billType === "gst" && !!custState && !!bizState && custState.trim().toLowerCase() !== bizState.trim().toLowerCase();
 
 export async function reserveReceiptNumber(businessId: string, reservationId: string) {
+  if (!isBusinessId(businessId)) throw new HttpError(400, "Invalid business");
   if (!/^[\da-f-]{36}$/i.test(reservationId)) throw new HttpError(400, "Invalid receipt reservation");
   const reservationRef = db.doc(`receiptReservations/${businessId}_${reservationId}`);
   const bizRef = db.doc(`businesses/${businessId}`);
@@ -85,7 +86,18 @@ export async function reserveReceiptNumber(businessId: string, reservationId: st
   return db.runTransaction(async (tx) => {
     const existing = await tx.get(reservationRef);
     const reservedNumber = existing.data()?.receiptNumber;
-    if (typeof reservedNumber === "string") return reservedNumber;
+    if (typeof reservedNumber === "string") {
+      const { prefix } = BUSINESSES[businessId];
+      const match = /^(?:(SS|PL)-)?REC-(\d+)$/.exec(reservedNumber);
+      if (match) {
+        const sequence = match[2].replace(/^0+(?=\d)/, "").padStart(2, "0");
+        const migratedNumber = `${prefix}-REC-${sequence}`;
+        if (migratedNumber === reservedNumber) return reservedNumber;
+        tx.update(reservationRef, { receiptNumber: migratedNumber });
+        return migratedNumber;
+      }
+      return reservedNumber;
+    }
 
     const [bizSnap, billsSnap] = await Promise.all([
       tx.get(bizRef),
@@ -95,15 +107,18 @@ export async function reserveReceiptNumber(businessId: string, reservationId: st
     if (!biz) throw new HttpError(404, "Business not found");
 
     let lastNumber = Number(biz.counters?.receipt) || 0;
+    const { prefix } = BUSINESSES[businessId];
     for (const bill of billsSnap.docs) {
       const data = bill.data();
       for (const value of [data.receiptNumber, data.billNumber]) {
-        const match = typeof value === "string" ? /^REC-(\d+)$/.exec(value) : null;
+        const match = typeof value === "string"
+          ? /^(?:REC|(?:SS|PL)-REC)-(\d+)$/.exec(value)
+          : null;
         if (match) lastNumber = Math.max(lastNumber, Number(match[1]));
       }
     }
 
-    const receiptNumber = `REC-${String(lastNumber + 1).padStart(6, "0")}`;
+    const receiptNumber = `${prefix}-REC-${String(lastNumber + 1).padStart(2, "0")}`;
     tx.set(reservationRef, { businessId, receiptNumber });
     tx.update(bizRef, { "counters.receipt": lastNumber + 1 });
     return receiptNumber;
@@ -113,7 +128,9 @@ export async function reserveReceiptNumber(businessId: string, reservationId: st
 export async function createBill(inp: BillInput) {
   const { businessId, billType } = inp;
   const createdBy = inp.createdBy ?? "owner";
-  if (!/^REC-\d{6,}$/.test(inp.receiptNumber ?? "") || !/^[\da-f-]{36}$/i.test(inp.receiptReservationId ?? ""))
+  const { prefix } = BUSINESSES[businessId];
+  if (typeof inp.receiptNumber !== "string" || !new RegExp(`^${prefix}-REC-\\d{2,}$`).test(inp.receiptNumber)
+    || !/^[\da-f-]{36}$/i.test(inp.receiptReservationId ?? ""))
     throw new HttpError(400, "Receipt number is missing or invalid");
   const items = cleanItems(inp.items);
   const customer = { ...inp.customer, name: inp.customer?.name?.trim() || "Walk-in" };
@@ -136,7 +153,6 @@ export async function createBill(inp: BillInput) {
       throw new HttpError(409, "Receipt number reservation expired. Refresh the page and try again.");
 
     const seq = (biz.counters?.[billType] ?? 0) + 1;
-    const { prefix } = BUSINESSES[businessId];
     const num = String(seq).padStart(4, "0");
     const billNumber = billType === "gst" ? `${prefix}-GST-${num}` : `${prefix}-${num}`;
     const interState = isInterState(billType, customer.state, biz.state);

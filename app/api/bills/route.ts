@@ -1,5 +1,6 @@
 import { route, HttpError } from "@/lib/admin";
 import { areBusinessStaff, createBill } from "@/lib/billing";
+import { syncBillWithWarning } from "@/lib/google-sheets";
 import { isBusinessId } from "@/lib/types";
 
 export const POST = route(async (req) => {
@@ -14,5 +15,6 @@ export const POST = route(async (req) => {
   if (typeof b.receiptNumber !== "string" || typeof b.receiptReservationId !== "string")
     throw new HttpError(400, "Receipt number is required");
   delete b.createdAt;
-  return { id: await createBill(b) };
+  const id = await createBill(b);
+  return { id, sheetSyncError: await syncBillWithWarning(id) };
 });
