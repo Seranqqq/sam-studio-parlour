@@ -2,7 +2,7 @@ import { FieldValue, Transaction } from "firebase-admin/firestore";
 import { adminDb as db, HttpError } from "./admin";
 import { computeTotals, statusFor } from "./calc";
 import { dateParts } from "./format";
-import { BUSINESSES, type Bill, type BillInput, type BillItem, type PayMethod } from "./types";
+import { BUSINESSES, BUSINESS_STAFF, isBusinessId, type Bill, type BillInput, type BillItem, type BusinessId, type PayMethod } from "./types";
 
 type Flat = Record<string, number>;
 const key = (s: string) => String(s).replace(/[.\/~*\[\]\s]+/g, "_").slice(0, 60) || "x";
@@ -41,6 +41,22 @@ function patch(f: Flat, extra: object) {
 }
 
 const sumRef = (b: string, d: string) => db.doc(`summaries/${b}_${d}`);
+
+export async function getBusinessStaff(businessId: BusinessId) {
+  const snap = await db.doc(`businesses/${businessId}`).get();
+  const staff = snap.data()?.staff;
+  return Array.isArray(staff)
+    ? staff.filter((name): name is string => typeof name === "string" && !!name.trim())
+    : [...BUSINESS_STAFF[businessId]];
+}
+
+export async function areBusinessStaff(businessId: unknown, names: unknown) {
+  if (typeof businessId !== "string" || !isBusinessId(businessId) || !Array.isArray(names)
+    || names.length === 0 || !names.every((name): name is string => typeof name === "string" && !!name.trim())
+    || new Set(names).size !== names.length) return false;
+  const staff = await getBusinessStaff(businessId);
+  return names.every((name) => staff.includes(name));
+}
 
 function cleanItems(items: BillItem[]): BillItem[] {
   const out = (items ?? [])
@@ -131,7 +147,10 @@ export async function createBill(inp: BillInput) {
     const bill: Bill = {
       ...t, id: billRef.id, businessId, billType, billNumber, receiptNumber: inp.receiptNumber, seq,
       customer: { ...customer, id: customerId }, items, paymentMethod: inp.paymentMethod,
-      paidAmount: paid, createdBy, status: statusFor(t.total, paid), interState,
+      paidAmount: paid, createdBy,
+      createdByName: createdBy === "staff" ? inp.createdByNames?.[0] ?? inp.createdByName : undefined,
+      createdByNames: createdBy === "staff" ? inp.createdByNames ?? (inp.createdByName ? [inp.createdByName] : undefined) : undefined,
+      status: statusFor(t.total, paid), interState,
       business: { name: biz.name, gstin: biz.gstin, address: biz.address, state: biz.state, phone: biz.phone },
       createdAt, dateKey, notes: inp.notes,
     };
@@ -180,7 +199,12 @@ export async function updateBill(id: string, inp: BillInput) {
     const paid = Math.min(Math.max(Number(inp.paidAmount) || 0, 0), t.total);
     const bill: Bill = {
       ...old, ...t, items, customer, paymentMethod: inp.paymentMethod, paidAmount: paid,
-      createdBy: inp.createdBy ?? old.createdBy ?? "owner", status: statusFor(t.total, paid), interState, notes: inp.notes,
+      createdBy: inp.createdBy ?? old.createdBy ?? "owner",
+      createdByName: inp.createdBy === "owner" ? undefined
+        : inp.createdByNames?.[0] ?? inp.createdByName ?? old.createdByName,
+      createdByNames: inp.createdBy === "owner" ? undefined
+        : inp.createdByNames ?? (inp.createdByName ? [inp.createdByName] : old.createdByNames),
+      status: statusFor(t.total, paid), interState, notes: inp.notes,
     };
     tx.set(ref, bill);
     itemsQ.docs.forEach((d) => tx.delete(d.ref));

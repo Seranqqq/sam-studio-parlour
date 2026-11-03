@@ -1,26 +1,92 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
 import { inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
-import { isBusinessId, type Service } from "@/lib/types";
+import { BUSINESS_STAFF, isBusinessId, type BusinessId, type Service } from "@/lib/types";
+import { useBusinessId } from "@/lib/use-business-id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SettingsPage() {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   if (!isBusinessId(businessId)) return <p>Pick a single business.</p>;
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Settings</h1>
       <Profile businessId={businessId} />
+      <StaffRoster businessId={businessId} />
       <Services businessId={businessId} />
     </div>
+  );
+}
+
+function StaffRoster({ businessId }: { businessId: BusinessId }) {
+  const [staff, setStaff] = useState<string[]>([...BUSINESS_STAFF[businessId]]);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getDoc(doc(db, "businesses", businessId)).then((snapshot) => {
+      if (!active) return;
+      const saved = snapshot.data()?.staff;
+      if (Array.isArray(saved))
+        setStaff(saved.filter((value): value is string => typeof value === "string" && !!value.trim()));
+    }).catch((e: unknown) => {
+      if (active) setError(e instanceof Error ? e.message : "Could not load staff");
+    });
+    return () => { active = false; };
+  }, [businessId]);
+
+  async function addStaff(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const newName = name.trim();
+    setError("");
+    setMessage("");
+    if (!newName) {
+      setError("Enter a staff name");
+      return;
+    }
+    if (staff.some((existing) => existing.toLowerCase() === newName.toLowerCase())) {
+      setError("That staff member is already added");
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, "businesses", businessId), { staff: arrayUnion(...staff, newName) });
+      setStaff((current) => [...current, newName]);
+      setName("");
+      setMessage("Staff member added");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not add staff member");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-base">Staff</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">Add staff members available in the Create Bill dropdown.</p>
+        <form className="flex flex-wrap gap-2" onSubmit={addStaff}>
+          <Input className="min-w-48 flex-1" placeholder="Staff name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Button type="submit" disabled={saving}>{saving ? "Adding…" : "Add staff"}</Button>
+        </form>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {message && <p className="text-sm text-green-700">{message}</p>}
+        <ul className="flex flex-wrap gap-2 text-sm">
+          {staff.map((member) => <li key={member} className="rounded-full border px-3 py-1">{member}</li>)}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 

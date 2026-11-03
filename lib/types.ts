@@ -1,9 +1,13 @@
 export const BUSINESSES = {
   "sam-studio": { name: "Sam Studio", prefix: "SS" },
-  parlour: { name: "Parlour", prefix: "PL" },
+  parlour: { name: "THRESH SALOON", prefix: "PL" },
 } as const;
 export type BusinessId = keyof typeof BUSINESSES;
 export const isBusinessId = (v: string): v is BusinessId => v in BUSINESSES;
+export const BUSINESS_STAFF: Record<BusinessId, readonly string[]> = {
+  "sam-studio": ["Sam", "Riya"],
+  parlour: ["Anita", "Meera", "Kiran"],
+};
 
 export type BillType = "normal" | "gst";
 export type BillEntryBy = "owner" | "staff";
@@ -22,6 +26,8 @@ export interface Totals {
 export interface Bill extends Totals {
   id: string; businessId: BusinessId; billType: BillType; billNumber: string; receiptNumber?: string; seq: number;
   customer: CustomerSnap; items: BillItem[]; paymentMethod: PayMethod; paidAmount: number; createdBy: BillEntryBy;
+  createdByName?: string;
+  createdByNames?: string[];
   status: "paid" | "partial" | "unpaid" | "cancelled"; interState: boolean;
   business: { name: string; gstin?: string; address?: string; state?: string; phone?: string };
   createdAt: number; dateKey: string; notes?: string;
@@ -29,6 +35,7 @@ export interface Bill extends Totals {
 export interface BillInput {
   businessId: BusinessId; billType: BillType; customer: CustomerSnap; items: BillItem[];
   paymentMethod: PayMethod; paidAmount: number; notes?: string; createdAt?: number; createdBy?: BillEntryBy;
+  createdByName?: string; createdByNames?: string[];
   receiptNumber?: string; receiptReservationId?: string;
 }
 export interface Service {

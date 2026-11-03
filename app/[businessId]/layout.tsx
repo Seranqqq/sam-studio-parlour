@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Camera, FilePlus2, LayoutDashboard, Menu, Receipt, Settings, Sparkles, Users, X } from "lucide-react";
 import { BUSINESSES, isBusinessId } from "@/lib/types";
+import { useBusinessId } from "@/lib/use-business-id";
 import { sel } from "@/lib/ui";
 
 const NAV = [
@@ -22,7 +23,7 @@ const BRANDING = {
 } as const;
 
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -61,7 +62,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     nav.map(([k, label, Icon]) => (
       <Link
         key={k}
-        href={`/${businessId}/${k}`}
+        href={`/${encodeURIComponent(businessId)}/${k}`}
         className={`mb-1 flex items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
           mobile ? "py-3" : "py-2.5"
         } ${section === k ? "bg-primary/10 font-semibold text-primary" : "text-slate-600 hover:bg-slate-100"}`}
@@ -101,7 +102,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             value={businessId}
             onChange={(e) => {
               const v = e.target.value;
-              router.push(`/${v}/${v === "all" && !ALL_OK.includes(section) ? "dashboard" : section}`);
+              router.push(`/${encodeURIComponent(v)}/${v === "all" && !ALL_OK.includes(section) ? "dashboard" : section}`);
             }}
           >
             {BUSINESS_OPTIONS.map((b) => (

@@ -1,13 +1,13 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { api } from "@/lib/api";
 import { fmtDateTime, inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
 import { isBusinessId, type Bill } from "@/lib/types";
+import { useBusinessId } from "@/lib/use-business-id";
 import { downloadInvoicePdf } from "@/lib/download-invoice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function Bills() {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   const [bills, setBills] = useState<Bill[]>([]);
   const [q, setQ] = useState("");
   const [type, setType] = useState("");

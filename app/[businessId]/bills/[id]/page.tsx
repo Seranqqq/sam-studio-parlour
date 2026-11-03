@@ -9,9 +9,11 @@ import { downloadInvoicePdf } from "@/lib/download-invoice";
 import InvoiceView from "@/components/InvoiceView";
 import { Button } from "@/components/ui/button";
 import type { Bill } from "@/lib/types";
+import { useBusinessId } from "@/lib/use-business-id";
 
 export default function BillPage() {
-  const { businessId, id } = useParams<{ businessId: string; id: string }>();
+  const businessId = useBusinessId();
+  const { id } = useParams<{ id: string }>();
   const [bill, setBill] = useState<Bill | null>(null);
   const [link, setLink] = useState("");
 

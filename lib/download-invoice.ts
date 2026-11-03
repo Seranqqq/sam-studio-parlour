@@ -60,6 +60,8 @@ export function downloadInvoicePdf(bill: Bill) {
   if (bill.customer.phone) y += addText(`Phone: ${bill.customer.phone}`, left, y);
   if (bill.billType === "gst" && bill.customer.gstin) y += addText(`GSTIN: ${bill.customer.gstin}`, left, y);
   if (bill.billType === "gst" && bill.customer.state) y += addText(`Place of supply: ${bill.customer.state}`, left, y);
+  const staffNames = bill.createdByNames ?? (bill.createdByName ? [bill.createdByName] : []);
+  y += addText(`Entered by: ${bill.createdBy === "staff" ? `Staff${staffNames.length ? ` (${staffNames.join(", ")})` : ""}` : "Owner"}`, left, y);
   y += 3;
 
   const columns = bill.billType === "gst"

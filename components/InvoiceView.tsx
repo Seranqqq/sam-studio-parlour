@@ -26,6 +26,10 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
         {b.customer.phone && <p>Ph: {b.customer.phone}</p>}
         {gst && b.customer.gstin && <p>GSTIN: {b.customer.gstin}</p>}
         {gst && b.customer.state && <p>Place of supply: {b.customer.state}</p>}
+        <p>Entered by: {b.createdBy === "staff"
+          ? `Staff${(b.createdByNames ?? (b.createdByName ? [b.createdByName] : [])).length
+            ? ` (${(b.createdByNames ?? [b.createdByName]).join(", ")})` : ""}`
+          : "Owner"}</p>
       </div>
 
       <div className="mt-3 overflow-x-auto">

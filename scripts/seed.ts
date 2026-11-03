@@ -1,13 +1,13 @@
 import { loadEnvConfig } from "@next/env";
 import { randomUUID } from "node:crypto";
-import type { BillItem, BusinessId, ItemType, PayMethod } from "../lib/types";
+import { BUSINESS_STAFF, type BillItem, type BusinessId, type ItemType, type PayMethod } from "../lib/types";
 
 loadEnvConfig(process.cwd());
 
 type Svc = { name: string; price: number; type: ItemType; hsn: string; gstRate: number };
-const DATA: Record<BusinessId, { name: string; gstin: string; svcs: Svc[]; staff: string[] }> = {
+const DATA: Record<BusinessId, { name: string; gstin: string; svcs: Svc[]; staff: readonly string[] }> = {
   "sam-studio": {
-    name: "Sam Studio", gstin: "27ABCDE1234F1Z5", staff: ["Sam", "Riya"],
+    name: "Sam Studio", gstin: "27ABCDE1234F1Z5", staff: BUSINESS_STAFF["sam-studio"],
     svcs: [
       { name: "Portrait Session", price: 3000, type: "service", hsn: "998383", gstRate: 18 },
       { name: "Wedding Package", price: 25000, type: "package", hsn: "998383", gstRate: 18 },
@@ -17,7 +17,7 @@ const DATA: Record<BusinessId, { name: string; gstin: string; svcs: Svc[]; staff
     ],
   },
   parlour: {
-    name: "Parlour", gstin: "27PQRST5678G1Z2", staff: ["Anita", "Meera", "Kiran"],
+    name: "THRESH SALOON", gstin: "27PQRST5678G1Z2", staff: BUSINESS_STAFF.parlour,
     svcs: [
       { name: "Haircut", price: 400, type: "service", hsn: "999721", gstRate: 18 },
       { name: "Facial", price: 1200, type: "service", hsn: "999721", gstRate: 18 },
@@ -28,7 +28,7 @@ const DATA: Record<BusinessId, { name: string; gstin: string; svcs: Svc[]; staff
   },
 };
 const NAMES = ["Asha", "Rahul", "Neha", "Vikram", "Pooja", "Arjun"];
-const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
 async function main() {
   const { adminDb: db } = await import("../lib/admin");

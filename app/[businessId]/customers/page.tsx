@@ -1,15 +1,15 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { dateParts, fmtDateTime, inr } from "@/lib/format";
 import { isBusinessId, type Customer } from "@/lib/types";
+import { useBusinessId } from "@/lib/use-business-id";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function Customers() {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   const [list, setList] = useState<Customer[]>([]);
   const [itemsByCustomer, setItemsByCustomer] = useState<Record<string, string[]>>({});
   const [q, setQ] = useState("");

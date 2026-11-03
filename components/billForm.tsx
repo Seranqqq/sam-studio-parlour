@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { computeTotals } from "@/lib/calc";
 import { inr } from "@/lib/format";
 import { sel } from "@/lib/ui";
-import type { Bill, BillEntryBy, BillItem, BillType, BusinessId, CustomerSnap, PayMethod, Service } from "@/lib/types";
+import { BUSINESS_STAFF, type Bill, type BillEntryBy, type BillItem, type BillType, type BusinessId, type CustomerSnap, type PayMethod, type Service } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +23,14 @@ export default function BillForm({ businessId, initial }: { businessId: Business
   const [items, setItems] = useState<BillItem[]>(initial?.items ?? [blank()]);
   const [method, setMethod] = useState<PayMethod>(initial?.paymentMethod ?? "cash");
   const [createdBy, setCreatedBy] = useState<BillEntryBy>(initial?.createdBy ?? "owner");
+  const [createdByNames, setCreatedByNames] = useState<string[]>(
+    initial?.createdByNames?.length ? [...initial.createdByNames] : initial?.createdByName ? [initial.createdByName] : [""]
+  );
   const [paid, setPaid] = useState<string>(initial ? String(initial.paidAmount) : "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [services, setServices] = useState<Service[]>([]);
   const [bizState, setBizState] = useState("");
+  const [staffNames, setStaffNames] = useState<string[]>([...BUSINESS_STAFF[businessId]]);
   const [receiptNumber, setReceiptNumber] = useState("");
   const [receiptReservationId, setReceiptReservationId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,7 +39,12 @@ export default function BillForm({ businessId, initial }: { businessId: Business
   useEffect(() => {
     getDocs(query(collection(db, "services"), where("businessId", "==", businessId))).then((s) =>
       setServices(s.docs.map((d) => ({ id: d.id, ...d.data() }) as Service).filter((x) => x.active)));
-    getDoc(doc(db, "businesses", businessId)).then((s) => setBizState(s.data()?.state ?? ""));
+    getDoc(doc(db, "businesses", businessId)).then((s) => {
+      const business = s.data();
+      setBizState(business?.state ?? "");
+      if (Array.isArray(business?.staff))
+        setStaffNames(business.staff.filter((name): name is string => typeof name === "string" && !!name.trim()));
+    }).catch((e: unknown) => setErr(e instanceof Error ? e.message : "Could not load business staff"));
   }, [businessId]);
 
   useEffect(() => {
@@ -86,12 +95,17 @@ export default function BillForm({ businessId, initial }: { businessId: Business
   async function submit() {
     setErr("");
     if (!initial && (!receiptNumber || !receiptReservationId)) return setErr("Receipt number is still being prepared. Please try again.");
+    if (createdBy === "staff" && (
+      createdByNames.some((name) => !staffNames.includes(name))
+      || new Set(createdByNames).size !== createdByNames.length
+    )) return setErr("Select a different staff member for each entry.");
     if (!items.some((i) => i.name && i.qty > 0)) return setErr("Add at least one item");
     setBusy(true);
     try {
       const body = {
         businessId, billType, customer: cust, items: items.filter((i) => i.name),
         paymentMethod: method, paidAmount: paidNum, notes, createdBy,
+        createdByNames: createdBy === "staff" ? createdByNames : undefined,
         ...(initial ? {} : { receiptNumber, receiptReservationId }),
       };
       const r = initial ? await api(`/api/bills/${initial.id}`, "PATCH", body) : await api("/api/bills", "POST", body);
@@ -176,10 +190,42 @@ export default function BillForm({ businessId, initial }: { businessId: Business
       <Card>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
           <div><Label className="mb-1">Bill entered by</Label>
-            <select className={sel} value={createdBy} onChange={(e) => setCreatedBy(e.target.value as BillEntryBy)}>
+            <select className={sel} value={createdBy} onChange={(e) => {
+              const value = e.target.value as BillEntryBy;
+              setCreatedBy(value);
+              if (value === "staff" && !createdByNames.some(Boolean)) setCreatedByNames([""]);
+            }}>
               <option value="owner">Owner</option>
               <option value="staff">Staff</option>
             </select></div>
+          {createdBy === "staff" && (
+            <div className="space-y-2">
+              <Label>Staff name{createdByNames.filter(Boolean).length > 1 ? "s" : ""}</Label>
+              {createdByNames.map((selectedName, index) => {
+                const otherNames = new Set(createdByNames.filter((_, i) => i !== index));
+                const options = staffNames.filter((name) => name === selectedName || !otherNames.has(name));
+                return (
+                  <div key={index} className="flex gap-2">
+                    <select className={`${sel} min-w-0 flex-1`} value={selectedName}
+                      onChange={(e) => setCreatedByNames((current) => current.map((name, i) => i === index ? e.target.value : name))}>
+                      <option value="">Select staff member</option>
+                      {options.map((name) => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                    {createdByNames.length > 1 && (
+                      <Button type="button" variant="outline" onClick={() =>
+                        setCreatedByNames((current) => current.filter((_, i) => i !== index))
+                      }>Remove</Button>
+                    )}
+                  </div>
+                );
+              })}
+              <Button type="button" variant="outline" disabled={
+                createdByNames.some((name) => !name) || createdByNames.length >= staffNames.length
+              } onClick={() => setCreatedByNames((current) => [...current, ""])}>
+                + Add another staff
+              </Button>
+            </div>
+          )}
           <div><Label className="mb-1">Payment method</Label>
             <select className={sel} value={method} onChange={(e) => setMethod(e.target.value as PayMethod)}>
               <option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option>

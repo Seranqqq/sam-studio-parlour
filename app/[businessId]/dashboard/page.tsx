@@ -1,11 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
 import { addDays, dateParts, inr } from "@/lib/format";
+import { useBusinessId } from "@/lib/use-business-id";
 import type { Bill } from "@/lib/types";
 import Stat from "@/components/ui/Stat";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ interface DashboardData {
 }
 
 export default function Dashboard() {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   const [today, setToday] = useState<TodayTotals | null>(null);
   const [week, setWeek] = useState<{ date: string; revenue: number; bills: number }[]>([]);
   const [recent, setRecent] = useState<Bill[]>([]);

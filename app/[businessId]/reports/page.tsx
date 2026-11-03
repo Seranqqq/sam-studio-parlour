@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import { collection, getCountFromServer, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { db } from "@/lib/firebase";
 import { inr, rangeFor, type Preset } from "@/lib/format";
 import { loadSummaries, type Agg } from "@/lib/summaries";
+import { useBusinessId } from "@/lib/use-business-id";
 import Stat from "@/components/ui/Stat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ const Pie2 = ({ title, data }: { title: string; data: Row[] }) => (
 );
 
 export default function Reports() {
-  const { businessId } = useParams<{ businessId: string }>();
+  const businessId = useBusinessId();
   const [preset, setPreset] = useState<Preset>("month");
   const [cf, setCf] = useState("");
   const [ct, setCt] = useState("");

@@ -4,7 +4,7 @@ service cloud.firestore {
     match /businesses/{id} {
       allow read: if true;
       allow update: if request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['name','gstin','address','state','phone','defaultTaxRate']);
+        .hasOnly(['name','gstin','address','state','phone','defaultTaxRate','staff']);
     }
     match /customers/{id} {
       allow read: if true;
