@@ -1,5 +1,5 @@
 import { inr } from "./format";
-import type { Bill } from "./types";
+import { getBillBusiness, type Bill } from "./types";
 
 // 10-digit Indian numbers get +91; others keep their country code
 export function waLink(phone: string | undefined, text: string) {
@@ -12,13 +12,14 @@ export function waLink(phone: string | undefined, text: string) {
 
 export function waMessage(b: Bill, url: string) {
   const due = b.total - b.paidAmount;
+  const business = getBillBusiness(b);
   const paidLine =
     b.status === "cancelled" ? "This bill is cancelled."
     : due > 0 ? `Paid ${inr(b.paidAmount)}, balance due ${inr(due)}.`
     : "Paid in full. Thank you!";
   return [
     `Hello ${b.customer.name},`,
-    `Thank you for choosing ${b.business.name}.`,
+    `Thank you for choosing ${business.name}.`,
     `${b.billType === "gst" ? "Tax invoice" : "Bill"} ${b.billNumber}: total ${inr(b.total)}.`,
     paidLine,
     `View or download your bill: ${url}`,

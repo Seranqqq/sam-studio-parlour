@@ -141,6 +141,8 @@
 :root {
   --brand-from: #312e81;
   --brand-to: #6366f1;
+  --chart-primary: #2563eb;
+  --chart-secondary: #f59e0b;
 }
 [data-biz="sam-studio"] {
   --primary: oklch(0.555 0.163 48.4);
@@ -149,8 +151,13 @@
   --brand-to: #b45309;
 }
 [data-biz="parlour"] {
-  --primary: oklch(0.586 0.253 17.585);
-  --ring: oklch(0.645 0.246 16.439);
-  --brand-from: #9f1239;
-  --brand-to: #f472b6;
+  --primary: #264033;
+  --primary-foreground: #fff;
+  --secondary: #daa520;
+  --secondary-foreground: #1f2937;
+  --ring: #264033;
+  --brand-from: #264033;
+  --brand-to: #3b5f4b;
+  --chart-primary: #264033;
+  --chart-secondary: #daa520;
 }

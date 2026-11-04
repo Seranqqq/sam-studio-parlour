@@ -32,6 +32,13 @@ export interface Bill extends Totals {
   business: { name: string; gstin?: string; address?: string; state?: string; phone?: string };
   createdAt: number; dateKey: string; notes?: string;
 }
+export function getBillBusiness(bill: Pick<Bill, "businessId" | "business">) {
+  const details = bill.business ?? {};
+  return {
+    ...details,
+    name: details.name || BUSINESSES[bill.businessId]?.name || "Business",
+  };
+}
 export function receiptNumberForBill(bill: Pick<Bill, "businessId" | "receiptNumber" | "billNumber">) {
   const number = bill.receiptNumber ?? bill.billNumber;
   const match = /^(?:(?:SS|PL)-)?REC-(\d+)$/.exec(number);

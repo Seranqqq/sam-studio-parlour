@@ -1,5 +1,5 @@
 import { adminDb } from "./admin";
-import { BUSINESSES, receiptNumberForBill, type Bill, type BusinessId } from "./types";
+import { BUSINESSES, getBillBusiness, receiptNumberForBill, type Bill, type BusinessId } from "./types";
 
 const integrationRef = adminDb.doc("integrations/googleSheets");
 const headers = [
@@ -49,7 +49,7 @@ function rowFor(bill: Bill): unknown[] {
   const names = bill.createdByNames?.length ? bill.createdByNames : bill.createdByName ? [bill.createdByName] : [];
   return [
     bill.id,
-    bill.business.name,
+    getBillBusiness(bill).name,
     receiptNumberForBill(bill),
     bill.billNumber,
     new Date(bill.createdAt).toISOString(),

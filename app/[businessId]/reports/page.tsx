@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2"];
+const COLORS = ["var(--chart-primary)", "#16a34a", "var(--chart-secondary)", "#dc2626", "#7c3aed", "#0891b2"];
 type Row = { name: string; value: number };
 const rows = (m: Record<string, number> = {}): Row[] =>
   Object.entries(m).map(([name, value]) => ({ name: name.replace(/_/g, " "), value: Math.round(value) })).sort((a, b) => b.value - a.value);
@@ -28,7 +28,7 @@ const Bars = ({ title, data }: { title: string; data: Row[] }) => (
   <Box title={title} empty={!data.length}>
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" fontSize={11} /><YAxis fontSize={11} /><Tooltip />
-        <Bar dataKey="value" fill="#2563eb" /></BarChart>
+        <Bar dataKey="value" fill="var(--chart-primary)" /></BarChart>
     </ResponsiveContainer>
   </Box>
 );
@@ -87,7 +87,7 @@ export default function Reports() {
         <Box title="Revenue trend" empty={!a?.days.length}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={a?.days ?? []}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" fontSize={11} /><YAxis fontSize={11} /><Tooltip />
-              <Line dataKey="revenue" stroke="#2563eb" strokeWidth={2} /></LineChart>
+              <Line dataKey="revenue" stroke="var(--chart-primary)" strokeWidth={2} /></LineChart>
           </ResponsiveContainer>
         </Box>
         <Pie2 title="Paid vs unpaid" data={[{ name: "Paid", value: Math.round(a?.paid ?? 0) }, { name: "Unpaid", value: Math.round(a?.unpaid ?? 0) }]} />

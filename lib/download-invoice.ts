@@ -1,11 +1,12 @@
 import { jsPDF } from "jspdf";
 import type { Bill } from "@/lib/types";
-import { receiptNumberForBill } from "@/lib/types";
+import { getBillBusiness, receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime } from "@/lib/format";
 
 const money = (value: number) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
 export function downloadInvoicePdf(bill: Bill) {
+  const business = getBillBusiness(bill);
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -31,12 +32,12 @@ export function downloadInvoicePdf(bill: Bill) {
   };
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(18);
-  y += addText(bill.business.name, left, y, 110);
+  y += addText(business.name, left, y, 110);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  if (bill.business.address) y += addText(bill.business.address, left, y, 110);
-  if (bill.business.phone) y += addText(`Phone: ${bill.business.phone}`, left, y, 110);
-  if (bill.billType === "gst" && bill.business.gstin) y += addText(`GSTIN: ${bill.business.gstin}`, left, y, 110);
+  if (business.address) y += addText(business.address, left, y, 110);
+  if (business.phone) y += addText(`Phone: ${business.phone}`, left, y, 110);
+  if (bill.billType === "gst" && business.gstin) y += addText(`GSTIN: ${business.gstin}`, left, y, 110);
 
   const title = bill.billType === "gst" ? "TAX INVOICE" : "BILL";
   pdf.setFont("helvetica", "bold");

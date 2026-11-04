@@ -1,18 +1,19 @@
 import type { Bill } from "@/lib/types";
-import { receiptNumberForBill } from "@/lib/types";
+import { getBillBusiness, receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime, inr } from "@/lib/format";
 
 export default function InvoiceView({ bill: b }: { bill: Bill }) {
   const gst = b.billType === "gst";
   const due = b.total - b.paidAmount;
+  const business = getBillBusiness(b);
   return (
     <div className="rounded-lg border bg-white p-4 text-sm text-black print:border-0 print:p-0">
       <div className="flex flex-wrap justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold">{b.business.name}</h2>
-          {b.business.address && <p>{b.business.address}</p>}
-          {b.business.phone && <p>Ph: {b.business.phone}</p>}
-          {gst && b.business.gstin && <p>GSTIN: {b.business.gstin}</p>}
+          <h2 className="text-xl font-semibold">{business.name}</h2>
+          {business.address && <p>{business.address}</p>}
+          {business.phone && <p>Ph: {business.phone}</p>}
+          {gst && business.gstin && <p>GSTIN: {business.gstin}</p>}
         </div>
         <div className="text-right">
           <p className="font-semibold">{gst ? "TAX INVOICE" : "BILL"}</p>
