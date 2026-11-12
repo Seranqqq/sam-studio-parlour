@@ -74,6 +74,14 @@ export default function Bills() {
     }
   }
 
+  async function downloadPdf(bill: Bill) {
+    try {
+      await downloadInvoicePdf(bill);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to download invoice PDF");
+    }
+  }
+
   return (
     <div className="space-y-3">
       <h1 className="text-xl font-semibold">Bills History</h1>
@@ -154,7 +162,7 @@ export default function Bills() {
                 <TableCell><Badge variant="outline">{b.status}</Badge></TableCell>
                 <TableCell className="space-x-1 whitespace-nowrap text-right">
                   <Button size="sm" variant="outline" asChild><Link href={`/${businessId}/bills/${b.id}`}>View</Link></Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadInvoicePdf(b)}>
+                  <Button size="sm" variant="outline" onClick={() => downloadPdf(b)}>
                     Download PDF
                   </Button>
                   {b.status !== "cancelled" && b.status !== "paid" && (

@@ -1,11 +1,11 @@
 import { jsPDF } from "jspdf";
 import type { Bill } from "@/lib/types";
-import { getBillBusiness, receiptNumberForBill } from "@/lib/types";
+import { BUSINESSES, getBillBusiness, receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime } from "@/lib/format";
 
 const money = (value: number) => `Rs. ${Number(value || 0).toFixed(2)}`;
 
-export function downloadInvoicePdf(bill: Bill) {
+export async function downloadInvoicePdf(bill: Bill) {
   const business = getBillBusiness(bill);
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -13,6 +13,24 @@ export function downloadInvoicePdf(bill: Bill) {
   const left = 16;
   const right = pageWidth - left;
   let y = 18;
+
+  const logoResponse = await fetch(BUSINESSES[bill.businessId].logo);
+  if (!logoResponse.ok) throw new Error("Unable to load the business logo for the invoice PDF");
+  const logoBlob = await logoResponse.blob();
+  const logoData = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("Unable to read the business logo for the invoice PDF"));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read the business logo for the invoice PDF"));
+    reader.readAsDataURL(logoBlob);
+  });
+  const logoDimensions = pdf.getImageProperties(logoData);
+  const logoScale = Math.min(30 / logoDimensions.width, 24 / logoDimensions.height);
+  const logoWidth = logoDimensions.width * logoScale;
+  const logoHeight = logoDimensions.height * logoScale;
+  const businessTextX = left + logoWidth + 5;
 
   const addText = (text: string, x: number, yPos: number, maxWidth = right - left) => {
     const lines = pdf.splitTextToSize(text, maxWidth) as string[];
@@ -30,14 +48,15 @@ export function downloadInvoicePdf(bill: Bill) {
     pdf.line(left, y, right, y);
     y += 6;
   };
+  pdf.addImage(logoData, "JPEG", left, y - 2, logoWidth, logoHeight);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(18);
-  y += addText(business.name, left, y, 110);
+  y += addText(business.name, businessTextX, y, right - businessTextX);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  if (business.address) y += addText(business.address, left, y, 110);
-  if (business.phone) y += addText(`Phone: ${business.phone}`, left, y, 110);
-  if (bill.billType === "gst" && business.gstin) y += addText(`GSTIN: ${business.gstin}`, left, y, 110);
+  if (business.address) y += addText(business.address, businessTextX, y, right - businessTextX);
+  if (business.phone) y += addText(`Phone: ${business.phone}`, businessTextX, y, right - businessTextX);
+  if (bill.billType === "gst" && business.gstin) y += addText(`GSTIN: ${business.gstin}`, businessTextX, y, right - businessTextX);
 
   const title = bill.billType === "gst" ? "TAX INVOICE" : "BILL";
   pdf.setFont("helvetica", "bold");
@@ -53,7 +72,7 @@ export function downloadInvoicePdf(bill: Bill) {
     pdf.setTextColor(0);
   }
 
-  y = Math.max(y, 48);
+  y = Math.max(y, 48, 16 + logoHeight + 4);
   line();
   pdf.setFont("helvetica", "bold");
   pdf.text(`Bill to: ${bill.customer.name || "Walk-in"}`, left, y);

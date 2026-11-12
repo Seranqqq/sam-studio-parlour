@@ -27,11 +27,18 @@ export default function BillPage() {
     setLink(url);
     navigator.clipboard?.writeText(url);
   }
+  async function downloadPdf(invoice: Bill) {
+    try {
+      await downloadInvoicePdf(invoice);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to download invoice PDF");
+    }
+  }
   if (!bill) return <p className="text-sm text-muted-foreground">Loading…</p>;
   return (
     <div className="mx-auto max-w-3xl">
       <div className="no-print mb-3 flex flex-wrap gap-2">
-        <Button onClick={() => downloadInvoicePdf(bill)}>Download PDF</Button>
+        <Button onClick={() => downloadPdf(bill)}>Download PDF</Button>
         <Button variant="outline" onClick={share}>Share link</Button>
         {bill.status !== "cancelled" && (
           <Button variant="outline" asChild><Link href={`/${businessId}/bills/${id}/edit`}>Edit</Link></Button>

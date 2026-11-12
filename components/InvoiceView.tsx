@@ -1,19 +1,30 @@
+import Image from "next/image";
 import type { Bill } from "@/lib/types";
-import { getBillBusiness, receiptNumberForBill } from "@/lib/types";
+import { BUSINESSES, getBillBusiness, receiptNumberForBill } from "@/lib/types";
 import { fmtDateTime, inr } from "@/lib/format";
 
 export default function InvoiceView({ bill: b }: { bill: Bill }) {
   const gst = b.billType === "gst";
   const due = b.total - b.paidAmount;
   const business = getBillBusiness(b);
+  const logo = BUSINESSES[b.businessId].logo;
   return (
     <div className="rounded-lg border bg-card p-4 text-sm text-card-foreground print:border-0 print:p-0">
       <div className="flex flex-wrap justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold">{business.name}</h2>
-          {business.address && <p>{business.address}</p>}
-          {business.phone && <p>Ph: {business.phone}</p>}
-          {gst && business.gstin && <p>GSTIN: {business.gstin}</p>}
+        <div className="flex items-start gap-3">
+          <Image
+            src={logo}
+            alt={`${business.name} logo`}
+            width={64}
+            height={64}
+            className="size-16 shrink-0 object-contain"
+          />
+          <div>
+            <h2 className="text-xl font-semibold">{business.name}</h2>
+            {business.address && <p>{business.address}</p>}
+            {business.phone && <p>Ph: {business.phone}</p>}
+            {gst && business.gstin && <p>GSTIN: {business.gstin}</p>}
+          </div>
         </div>
         <div className="text-right">
           <p className="font-semibold">{gst ? "TAX INVOICE" : "BILL"}</p>
