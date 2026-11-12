@@ -63,12 +63,12 @@ function GoogleSheets() {
             {connecting ? "Connecting…" : spreadsheetUrl ? "Connect & sync bills" : "Connect Google Sheets"}
           </Button>
           {spreadsheetUrl && (
-            <a className="text-sm text-blue-600 underline" href={spreadsheetUrl} target="_blank" rel="noreferrer">
+            <a className="text-sm text-primary underline" href={spreadsheetUrl} target="_blank" rel="noreferrer">
               Open billing spreadsheet
             </a>
           )}
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </CardContent>
     </Card>
   );
@@ -146,8 +146,8 @@ function StaffRoster({ businessId }: { businessId: BusinessId }) {
           <Input className="min-w-48 flex-1" placeholder="Staff name" value={name} onChange={(e) => setName(e.target.value)} />
           <Button type="submit" disabled={saving}>{saving ? "Adding…" : "Add staff"}</Button>
         </form>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {message && <p className="text-sm text-green-700">{message}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {message && <p className="text-sm text-primary">{message}</p>}
         <ul className="flex flex-wrap gap-2 text-sm">
           {staff.map((member) => (
             <li key={member} className="flex items-center gap-2 rounded-full border py-1 pl-3 pr-1">
@@ -190,7 +190,7 @@ function Profile({ businessId }: { businessId: string }) {
         <div><Label>Phone</Label><Input value={p.phone} onChange={set("phone")} /></div>
         <div className="sm:col-span-2"><Label>Address</Label><Input value={p.address} onChange={set("address")} /></div>
         <div><Label>Default GST %</Label><Input type="number" value={p.defaultTaxRate} onChange={set("defaultTaxRate")} /></div>
-        <div className="flex items-end gap-3"><Button onClick={save}>Save</Button><span className="text-sm text-green-700">{msg}</span></div>
+        <div className="flex items-end gap-3"><Button onClick={save}>Save</Button><span className="text-sm text-primary">{msg}</span></div>
       </CardContent>
     </Card>
   );
@@ -250,7 +250,7 @@ function Services({ businessId }: { businessId: string }) {
           <select className={sel} value={f.gstRate} onChange={(e) => setF({ ...f, gstRate: e.target.value })}>
             {[0, 5, 12, 18, 28].map((r) => <option key={r} value={r}>{r}%</option>)}</select>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex gap-2">
           <Button onClick={add}>{editingId ? "Save changes" : "Add"}</Button>
           {editingId && (
@@ -264,9 +264,9 @@ function Services({ businessId }: { businessId: string }) {
           <div key={s.id} className="flex items-center justify-between rounded border p-2 text-sm">
             <span className={s.active ? "" : "text-muted-foreground line-through"}>{s.name} · {s.type} · {inr(s.price)} · {s.gstRate}%</span>
             <span className="space-x-2">
-              <button type="button" className="text-blue-600" onClick={() => editItem(s)}>Edit</button>
-              <button className="text-blue-600" onClick={async () => { await updateDoc(doc(db, "services", s.id), { active: !s.active }); load(); }}>{s.active ? "Disable" : "Enable"}</button>
-              <button className="text-red-600" onClick={async () => { await deleteDoc(doc(db, "services", s.id)); load(); }}>Delete</button>
+              <button type="button" className="text-primary" onClick={() => editItem(s)}>Edit</button>
+              <button className="text-primary" onClick={async () => { await updateDoc(doc(db, "services", s.id), { active: !s.active }); load(); }}>{s.active ? "Disable" : "Enable"}</button>
+              <button className="text-destructive" onClick={async () => { await deleteDoc(doc(db, "services", s.id)); load(); }}>Delete</button>
             </span>
           </div>
         ))}

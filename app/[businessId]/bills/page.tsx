@@ -91,12 +91,12 @@ export default function Bills() {
       </div>
       {selectedCount > 0 && (
         <div className="flex justify-end">
-          <Button variant="outline" className="text-red-600" onClick={deleteSelected}>
+          <Button variant="outline" className="text-destructive" onClick={deleteSelected}>
             Delete Selected ({selectedCount})
           </Button>
         </div>
       )}
-      <div className="overflow-x-auto rounded-md border bg-white">
+      <div className="overflow-x-auto rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow>
             <TableHead>
@@ -163,7 +163,7 @@ export default function Bills() {
                       method: b.paymentMethod, paymentId: crypto.randomUUID(),
                     }))}>Mark paid</Button>)}
                   {b.status !== "cancelled" && (
-                    <Button size="sm" variant="outline" className="text-red-600"
+                    <Button size="sm" variant="outline" className="text-destructive"
                       onClick={() => confirm(b.billType === "gst" ? "Cancel this GST invoice?" : "Delete this bill?") && act(() => api(`/api/bills/${b.id}`, "DELETE"))}>
                       {b.billType === "gst" ? "Cancel" : "Delete"}</Button>)}
                 </TableCell>

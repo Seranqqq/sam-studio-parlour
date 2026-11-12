@@ -34,7 +34,7 @@ async function main() {
 
   await resetBusinesses();
   console.log("Reset business counters to zero.");
-  console.log("Receipt numbers will start again from REC-000001.");
+  console.log("Receipt numbers will restart from SS-REC-01 and PL-REC-01.");
 }
 
 main().catch((error) => {

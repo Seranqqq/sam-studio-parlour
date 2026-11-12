@@ -7,7 +7,7 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
   const due = b.total - b.paidAmount;
   const business = getBillBusiness(b);
   return (
-    <div className="rounded-lg border bg-white p-4 text-sm text-black print:border-0 print:p-0">
+    <div className="rounded-lg border bg-card p-4 text-sm text-card-foreground print:border-0 print:p-0">
       <div className="flex flex-wrap justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">{business.name}</h2>
@@ -19,7 +19,7 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
           <p className="font-semibold">{gst ? "TAX INVOICE" : "BILL"}</p>
           <p>{receiptNumberForBill(b)}</p>
           <p>{fmtDateTime(b.createdAt)}</p>
-          {b.status === "cancelled" && <p className="font-bold text-red-600">CANCELLED</p>}
+          {b.status === "cancelled" && <p className="font-bold text-destructive">CANCELLED</p>}
         </div>
       </div>
 
@@ -37,7 +37,7 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[480px] text-left">
           <thead>
-            <tr className="border-b text-xs uppercase text-slate-500">
+            <tr className="border-b text-xs uppercase text-muted-foreground">
               <th className="py-1">Item</th>{gst && <th>HSN/SAC</th>}<th className="text-right">Qty</th>
               <th className="text-right">Price</th><th className="text-right">Disc</th>
               {gst && <th className="text-right">GST</th>}<th className="text-right">Amount</th>
@@ -46,7 +46,7 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
           <tbody>
             {b.items.map((it, i) => (
               <tr key={i} className="border-b">
-                <td className="py-1">{it.name}{it.staff ? <span className="text-xs text-slate-500"> ({it.staff})</span> : null}</td>
+                <td className="py-1">{it.name}{it.staff ? <span className="text-xs text-muted-foreground"> ({it.staff})</span> : null}</td>
                 {gst && <td>{it.hsn}</td>}
                 <td className="text-right">{it.qty}</td>
                 <td className="text-right">{inr(it.price)}</td>
@@ -70,8 +70,8 @@ export default function InvoiceView({ bill: b }: { bill: Bill }) {
         <Row l={`Paid (${b.paymentMethod.toUpperCase()})`} v={inr(b.paidAmount)} />
         {due > 0 && b.status !== "cancelled" && <Row l="Balance due" v={inr(due)} />}
       </div>
-      {b.notes && <p className="mt-3 text-slate-600">Note: {b.notes}</p>}
-      <p className="mt-4 text-center text-xs text-slate-500">Thank you for your business!</p>
+      {b.notes && <p className="mt-3 text-muted-foreground">Note: {b.notes}</p>}
+      <p className="mt-4 text-center text-xs text-muted-foreground">Thank you for your business!</p>
     </div>
   );
 }

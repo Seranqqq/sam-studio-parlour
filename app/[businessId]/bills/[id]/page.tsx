@@ -38,7 +38,7 @@ export default function BillPage() {
         )}
         <Button variant="outline" asChild><Link href={`/${businessId}/create-bill`}>New bill</Link></Button>
       </div>
-      {link && <p className="no-print mb-3 break-all rounded bg-green-50 p-2 text-sm">Link copied: {link}</p>}
+      {link && <p className="no-print mb-3 break-all rounded bg-accent p-2 text-sm">Link copied: {link}</p>}
       <InvoiceView bill={bill} />
     </div>
   );

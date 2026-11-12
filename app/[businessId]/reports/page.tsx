@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const COLORS = ["var(--chart-primary)", "#16a34a", "var(--chart-secondary)", "#dc2626", "#7c3aed", "#0891b2"];
+const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--chart-6)"];
 type Row = { name: string; value: number };
 const rows = (m: Record<string, number> = {}): Row[] =>
   Object.entries(m).map(([name, value]) => ({ name: name.replace(/_/g, " "), value: Math.round(value) })).sort((a, b) => b.value - a.value);

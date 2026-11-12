@@ -1,6 +1,6 @@
 export const BUSINESSES = {
-  "sam-studio": { name: "Sam Studio", prefix: "SS" },
-  parlour: { name: "THRESH SALOON", prefix: "PL" },
+  "sam-studio": { name: "Sam Studio", prefix: "SS", logo: "/logos/Samstudiologo.jpg.jpeg" },
+  parlour: { name: "Thresh Salon", prefix: "PL", logo: "/logos/ThreshSalon_DP.jpg.jpeg" },
 } as const;
 export type BusinessId = keyof typeof BUSINESSES;
 export const isBusinessId = (v: string): v is BusinessId => v in BUSINESSES;

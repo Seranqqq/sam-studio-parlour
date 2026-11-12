@@ -113,7 +113,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Dashboard</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Today's revenue" value={inr(today?.revenue ?? 0)} />
         <Stat label="Bills today" value={today?.billCount ?? 0} sub={`${today?.gstCount ?? 0} GST · ${today?.normalCount ?? 0} normal`} />

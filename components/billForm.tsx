@@ -158,7 +158,7 @@ export default function BillForm({ businessId, initial }: { businessId: Business
         <CardHeader className="pb-2"><CardTitle className="text-base">Items</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {items.map((it, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2 rounded-xl border bg-slate-50/60 p-3 sm:grid-cols-6">
+            <div key={i} className="grid grid-cols-2 gap-2 rounded-xl border bg-muted/50 p-3 sm:grid-cols-6">
               <select className={`${sel} col-span-2 sm:col-span-3`} value={it.serviceId ?? ""} onChange={(e) => pickService(i, e.target.value)}>
                 <option value="">Pick from catalog…</option>
                 {services.map((s) => <option key={s.id} value={s.id}>{s.name} · {inr(s.price)}</option>)}
@@ -251,10 +251,10 @@ export default function BillForm({ businessId, initial }: { businessId: Business
         </CardContent>
       </Card>
 
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <p className="text-sm text-destructive">{err}</p>}
 
       {/* Sticky total + submit bar (sits above the mobile tab bar) */}
-      <div className="sticky bottom-0 z-10 -mx-3 flex items-center gap-3 border-t bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+      <div className="sticky bottom-0 z-10 -mx-3 flex items-center gap-3 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
         <div className="md:hidden">
           <p className="text-xs text-muted-foreground">Total</p>
           <p className="text-lg font-semibold leading-tight">{inr(t.total)}</p>

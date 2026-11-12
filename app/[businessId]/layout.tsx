@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, Camera, FilePlus2, LayoutDashboard, Menu, Receipt, Settings, Sparkles, Users, X } from "lucide-react";
@@ -55,6 +56,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   const nav = NAV.filter(([k]) => businessId !== "all" || ALL_OK.includes(k));
   const bizName = isBusinessId(businessId) ? BUSINESSES[businessId].name : "All businesses";
+  const logo = isBusinessId(businessId) ? BUSINESSES[businessId].logo : null;
   const brand = isBusinessId(businessId) ? BRANDING[businessId] : null;
   const pageTitle = NAV.find(([k]) => k === section)?.[1] ?? "";
 
@@ -65,19 +67,22 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         href={`/${encodeURIComponent(businessId)}/${k}`}
         className={`mb-1 flex items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
           mobile ? "py-3" : "py-2.5"
-        } ${section === k ? "bg-primary/10 font-semibold text-primary" : "text-slate-600 hover:bg-slate-100"}`}
+        } ${section === k ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground hover:bg-muted"}`}
       >
         <Icon size={19} /> {label}
       </Link>
     ));
 
   return (
-    <div data-biz={businessId} className="min-h-screen md:flex">
+    <div
+      data-biz={businessId}
+      className="min-h-screen bg-background text-foreground md:flex"
+    >
       {/* Desktop sidebar */}
       <aside className="no-print hidden w-60 shrink-0 border-r bg-white p-4 md:sticky md:top-0 md:block md:h-screen">
         <div className="mb-6 rounded-xl bg-[linear-gradient(135deg,var(--brand-from),var(--brand-to))] p-4 text-white">
-          <div className="mb-3 flex size-11 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-            {brand ? <brand.Icon size={22} /> : <LayoutDashboard size={22} />}
+          <div className="mb-3 flex size-11 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/15">
+            {logo ? <Image src={logo} alt={`${bizName} logo`} width={44} height={44} className="size-full object-cover" /> : <LayoutDashboard size={22} />}
           </div>
           <p className="text-lg font-semibold leading-tight">{bizName}</p>
           <p className="mt-1 text-xs text-white/80">{brand?.tagline ?? "Billing dashboard"}</p>
@@ -97,20 +102,22 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </button>
           <p className="truncate text-base font-semibold text-white md:hidden">{pageTitle}</p>
 
-          <select
-            className={`${sel} ml-auto max-w-[170px] border-white/30 bg-white/10 font-medium text-white md:ml-0 md:max-w-[200px]`}
-            value={businessId}
-            onChange={(e) => {
-              const v = e.target.value;
-              router.push(`/${encodeURIComponent(v)}/${v === "all" && !ALL_OK.includes(section) ? "dashboard" : section}`);
-            }}
-          >
-            {BUSINESS_OPTIONS.map((b) => (
-              <option key={b} value={b} className="text-slate-900">
-                {b === "all" ? "All businesses" : BUSINESSES[b as keyof typeof BUSINESSES].name}
-              </option>
-            ))}
-          </select>
+          <div className="ml-auto flex shrink-0 items-center gap-2 md:ml-0">
+            <select
+              className={`${sel} max-w-[170px] border-white/30 bg-white/10 font-medium text-white md:max-w-[200px]`}
+              value={businessId}
+              onChange={(e) => {
+                const v = e.target.value;
+                router.push(`/${encodeURIComponent(v)}/${v === "all" && !ALL_OK.includes(section) ? "dashboard" : section}`);
+              }}
+            >
+              {BUSINESS_OPTIONS.map((b) => (
+                <option key={b} value={b} className="text-slate-900">
+                  {b === "all" ? "All businesses" : BUSINESSES[b as keyof typeof BUSINESSES].name}
+                </option>
+              ))}
+            </select>
+          </div>
 
         </header>
 
@@ -139,8 +146,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             >
               <X size={18} />
             </button>
-            <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-white/20 text-lg font-bold">
-              {brand ? <brand.Icon size={22} /> : <LayoutDashboard size={22} />}
+            <div className="mb-3 flex size-12 items-center justify-center overflow-hidden rounded-xl border border-white/25 bg-white/15 text-lg font-bold">
+              {logo ? <Image src={logo} alt={`${bizName} logo`} width={48} height={48} className="size-full object-cover" /> : <LayoutDashboard size={22} />}
             </div>
             <p className="text-lg font-semibold leading-tight">{bizName}</p>
             <p className="mt-0.5 text-xs text-white/80">{brand?.tagline ?? "Billing dashboard"}</p>
